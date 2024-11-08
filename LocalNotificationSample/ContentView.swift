@@ -14,6 +14,8 @@ struct ContentView: View {
     }
     
     @State private var permissionSatatus: NotificationPermissionStatus = .notDetermined
+    @State private var datetime: Date = .now
+    @State private var interval: Int = 10
     @Environment(\.scenePhase) var scenePhase
     var notificationManager: NotificationManager
     
@@ -42,12 +44,30 @@ struct ContentView: View {
                         }
                         .buttonStyle(.bordered)
                     case .authorized:
-                        Button("Schedule Notification") {
-                            Task {
-                                await notificationManager.scheduleNotification()
+                    VStack(spacing: 50) {
+                        GroupBox("Interval Notification") {
+                            Stepper("Interval \(interval) sec later", value: $interval, in: 1...30)
+                            Button("Schedule Notification") {
+                                Task {
+                                    await notificationManager.scheduleNotification(Double(interval))
+                                }
                             }
+                            .buttonStyle(.borderedProminent)
                         }
-                        .buttonStyle(.borderedProminent)
+                        
+                        GroupBox("Calender Notification") {
+                            DatePicker("Select Date", selection: $datetime)
+                            Button("Schedule Notification") {
+                                let dateComponents = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: datetime)
+                                Task {
+                                    await notificationManager.scheduleNotification(dateComponents)
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+
                 }
                 List{
                     ForEach(notificationManager.pendingRequests, id: \.identifier) { request in
@@ -70,7 +90,7 @@ struct ContentView: View {
                 }
                 
             }
-            .padding(.top, 200)
+            .padding(.top, 150)
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active {
                     Task {

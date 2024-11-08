@@ -47,13 +47,33 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     }
     
     /// add scheduled notification
-    func scheduleNotification() async{
+    func scheduleNotification(_ seconds: Double) async{
         let content = UNMutableNotificationContent()
         content.title = "Feed the cat"
         content.body = "It looks hangry"
         content.sound = .default
         
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 10, repeats: false)
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: seconds, repeats: false)
+        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+        
+        let task = Task {
+            try await notificationCenter.add(request)
+        }
+        let result = await task.result
+        if case .success = result {
+            print("Notification scheduled")
+            await getPengingRequests() // update request pendding list
+        }
+    }
+    
+    /// add scheduled notification
+    func scheduleNotification(_ date: DateComponents) async{
+        let content = UNMutableNotificationContent()
+        content.title = "Feed the cat"
+        content.body = "It looks hangry"
+        content.sound = .default
+        
+        let trigger = UNCalendarNotificationTrigger(dateMatching: date, repeats: false)
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
         
         let task = Task {
